@@ -35,24 +35,31 @@ class AzureMessageHandler(subscriptionClient: SubscriptionClient, messageHandler
 }
 
 class ServiceBusSendInterface(configuration: Map[String, String]) extends SLF4JLogging {
-  private val log = LoggerFactory.getLogger(this.getClass)
-  val primConnString = configuration.getOrElse(Streaming.AUTH_WRITE_STRING, "")
-  val topicName = configuration.getOrElse(Streaming.TOPIC, "")
+  val primConnString = configuration.get(Streaming.AUTH_WRITE_STRING)
+  val topicName = configuration.get(Streaming.TOPIC)
 
-//  val primConnString = "Endpoint=sb://taskmonktest2.servicebus.windows.net/;SharedAccessKeyName=access;SharedAccessKey=Y7fWohR5J0T9emcs3rQEd8DhjzpKGi/kQCltchBNAiQ=;EntityPath=taskmonktest"
-//  val listenConnString = "Endpoint=sb://taskmonktest2.servicebus.windows.net/;SharedAccessKeyName=listen;SharedAccessKey=iwkKpRS+Rva+ho66kqJjedY5gzB4D/xV3gQ8kfkFe4g=;EntityPath=taskmonktest"
-  val topicClient = new TopicClient(new ConnectionStringBuilder(primConnString, topicName))
+  var topicClient: Option[TopicClient] = if (primConnString.isDefined && topicName.isDefined) {
+      Some(new TopicClient(new ConnectionStringBuilder(primConnString.get, topicName.get)))
+  } else {
+    None
+  }
 
   def send(messageId: String, content: String, label: String): Future[_] = {
-    val message = new Message(content)
-    message.setContentType("application/json")
-    message.setLabel(label)
-    message.setMessageId(messageId)
-    message.setTimeToLive(Duration.ofDays(14))
-    log.debug("\nMessage sending: Id = {}", message.getMessageId)
-    topicClient.sendAsync(message).toScala.map { x =>
-      log.debug("\n\tMessage acknowledged: Id = {}", message.getMessageId)
-      x
+    topicClient match {
+      case None =>
+        val ex = new InternalError("Topic Client not initialised")
+        Future.failed(ex)
+      case Some(client) =>
+        val message = new Message(content)
+        message.setContentType("application/json")
+        message.setLabel(label)
+        message.setMessageId(messageId)
+        message.setTimeToLive(Duration.ofDays(14))
+        log.debug("\nMessage sending: Id = {}", message.getMessageId)
+        client.sendAsync(message).toScala.map { x =>
+          log.debug("\n\tMessage acknowledged: Id = {}", message.getMessageId)
+          x
+        }
     }
   }
 }
