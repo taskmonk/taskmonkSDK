@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id="root [file:/Users/sampath/devel/workspace/TaskMonk/TaskMonkSDK/taskmonksdk/]" external.linked.project.path="$MODULE_DIR$/../.." external.root.project.path="$MODULE_DIR$/../.." external.system.id="SBT" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+    <output url="file://$MODULE_DIR$/../../target/scala-2.12/classes" />
+    <output-test url="file://$MODULE_DIR$/../../target/scala-2.12/test-classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../..">
+      <sourceFolder url="file://$MODULE_DIR$/../../src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../src/test/scala" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../target/scala-2.12/src_managed/main" isTestSource="false" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../target/scala-2.12/src_managed/test" isTestSource="true" generated="true" />
+      <excludeFolder url="file://$MODULE_DIR$/../../target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-library:2.12.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.bouncycastle:bcprov-jdk15on:1.53:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.bouncycastle:bcpkix-jdk15on:1.53:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.apache.qpid:proton-j:0.22.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.apache.commons:commons-lang3:3.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.apache.commons:commons-collections4:4.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: net.minidev:json-smart:1.3.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: javax.mail:mail:1.4.7:jar" level="project" />
+    <orderEntry type="library" name="sbt: javax.activation:activation:1.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: commons-codec:commons-codec:1.10:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.nimbusds:oauth2-oidc-sdk:5.24.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.nimbusds:nimbus-jose-jwt:4.29:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.nimbusds:lang-tag:1.4.3:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.microsoft.azure:azure-servicebus:1.2.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.microsoft.azure:adal4j:1.3.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.code.gson:gson:2.2.4:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.github.stephenc.jcip:jcip-annotations:1.0-1:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest_2.12:3.0.5:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalactic:scalactic_2.12:3.0.5:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scala-lang.modules:scala-xml_2.12:1.0.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.core:jackson-annotations:2.9.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.core:jackson-core:2.9.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.core:jackson-databind:2.9.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.typesafe.play:play-functional_2.12:2.7.0-M1:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.typesafe.play:play-json_2.12:2.7.0-M1:jar" level="project" />
+    <orderEntry type="library" name="sbt: joda-time:joda-time:2.9.9:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-reflect:2.12.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang.modules:scala-collection-compat_2.12:0.1.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.typelevel:macro-compat_2.12:1.1.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.slf4j:slf4j-api:1.8.0-beta2:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang.modules:scala-java8-compat_2.12:0.9.0:jar" level="project" />
+  </component>
+</module>
