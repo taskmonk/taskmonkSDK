@@ -16,5 +16,10 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback" % "0.5",
   "com.typesafe.play" % "play-json_2.12" % "2.7.0-M1",
   "com.microsoft.azure" % "azure-servicebus" % "1.2.5" exclude("org.slf4j", "slf4j-api"),
-  "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0" exclude("org.slf4j", "slf4j-api")
+  "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0" exclude("org.slf4j", "slf4j-api"),
+  "com.softwaremill.sttp" %% "core" % "1.3.8",
+  "com.softwaremill.sttp" % "play-json_2.12" % "1.3.8",
+  "com.softwaremill.sttp" %% "akka-http-backend" % "1.3.8",
+  "com.typesafe.akka" % "akka-stream_2.12" % "2.5.17",
+  "com.google.inject" % "guice" % "4.2.1"
 )
