@@ -4,7 +4,7 @@ import com.softwaremill.sttp._
 import com.softwaremill.sttp.akkahttp.AkkaHttpBackend
 import com.softwaremill.sttp.{HttpURLConnectionBackend, Uri}
 import io.taskmonk.auth.{ApiKeyCredentials, Credentials}
-import io.taskmonk.entities.{TaskImportUrlRequest, TaskImportUrlResponse}
+import io.taskmonk.entities.{BatchSummaryV2, JobProgressResponse, TaskImportUrlRequest, TaskImportUrlResponse}
 import play.api.libs.json.{JsError, JsSuccess, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +20,7 @@ class TaskMonkClient (credentials: Credentials) extends SLF4JLogging {
   val BASE_URL = "http://localhost:9000"
 
   def mapResponse[T](response: Response[Either[DeserializationError[JsError], T]] ): Either[String, T] = {
-    log.debug("response = {}", response)
+    log.debug("code = {}; response = {}", response.code, response: Any)
       response.body match {
         case Left(e) =>
           Left(e)
@@ -53,6 +53,43 @@ class TaskMonkClient (credentials: Credentials) extends SLF4JLogging {
       }.flatMap(identity)
   }
 
+
+  def getJobProgress(projectId: String, jobId: String): Future[JobProgressResponse] = {
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/job/${jobId}/status"
+    mysttp
+      .get(url)
+      .response(asJson[JobProgressResponse])
+      .send()
+      .map {response =>
+        mapResponse(response) match {
+          case Left(e) =>
+            val ex = new ApiFailedException(e)
+            Future.failed(ex)
+          case Right(r) =>
+            Future {r}
+        }
+      }.flatMap(identity)
+
+  }
+
+  def getBatchStatus(projectId: String, batchId: String): Future[BatchSummaryV2] = {
+    val url: Uri = uri"${BASE_URL}/api/project/v2/${projectId}/batch/${batchId}/status"
+    mysttp
+      .get(url)
+      .response(asJson[BatchSummaryV2])
+      .send()
+      .map {response =>
+        mapResponse(response) match {
+          case Left(e) =>
+            val ex = new ApiFailedException(e)
+            Future.failed(ex)
+          case Right(r) =>
+            Future {r}
+        }
+      }.flatMap(identity)
+
+  }
+
 }
 
 object TaskMonkClient {
@@ -81,7 +118,23 @@ object TaskMonkClient {
     val client = new TaskMonkClient(credentials = new ApiKeyCredentials(api_key))
     val fileUrl = "input.xls"
     val batchName = "batchName"
-    client.uploadTasks("1", new TaskImportUrlRequest(fileUrl, batchName)).map { println(_)}
+    val projectId = "1"
+    client.uploadTasks(projectId, new TaskImportUrlRequest(fileUrl, batchName)).map { importResponse =>
+      println(importResponse)
+      val jobId = importResponse.jobId
+      client.getJobProgress(projectId, jobId).map { jobProgress =>
+        println("jobProgress = {}", jobProgress)
+      }.recover {
+        case ex: Exception =>
+          ex.printStackTrace()
+      }
+      client.getBatchStatus(projectId, importResponse.batchId).map { batchStatus =>
+        println("batchStatus = {}", batchStatus)
+      }.recover {
+        case ex: Exception =>
+          ex.printStackTrace()
+      }
+    }
   }
 
 
