@@ -1,26 +1,21 @@
 package io.taskmonk.client
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File}
-import java.nio.charset.Charset
+import java.io.{ByteArrayOutputStream, File}
 import java.nio.file.Files
 import java.util.Base64
-import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+import java.util.zip.GZIPOutputStream
 
-import com.nimbusds.jose.util.IOUtils
-import com.softwaremill.sttp._
+import com.softwaremill.sttp.{Uri, _}
 import com.softwaremill.sttp.akkahttp.AkkaHttpBackend
-import com.softwaremill.sttp.{HttpURLConnectionBackend, Uri}
+import com.softwaremill.sttp.playJson._
+import exceptions.ApiFailedException
 import io.taskmonk.auth.{ApiKeyCredentials, Credentials}
 import io.taskmonk.entities._
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import io.taskmonk.utils.SLF4JLogging
+import play.api.libs.json.{JsError, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import com.softwaremill.sttp.playJson._
-import exceptions.ApiFailedException
-import io.taskmonk.utils.SLF4JLogging
-
-import scala.io.Source
 
 class TaskMonkClient (credentials: Credentials) extends SLF4JLogging {
 
@@ -62,23 +57,22 @@ class TaskMonkClient (credentials: Credentials) extends SLF4JLogging {
       }.flatMap(identity)
   }
 
-  def uploadTasks(projectId: String, batchName: String, priority: Int, comments: String, file: File): Future[TaskImportUrlResponse] = {
-    import java.nio.charset.Charset
-    import java.nio.charset.CharsetDecoder
+  def uploadTasks(projectId: String, file: File, batchName: String, priority: Option[Int] = Some(1),
+                  comments: Option[String] = None,
+                  notifications: List[Notification] = List.empty[Notification]): Future[TaskImportUrlResponse] = {
     val bytes = Files.readAllBytes(file.toPath)
-    println("bytes = " + bytes.size)
+    log.debug("bytes = " + bytes.size)
     val arrOutputStream = new ByteArrayOutputStream()
     val zipOutputStream = new GZIPOutputStream(arrOutputStream)
     zipOutputStream.write(bytes)
     zipOutputStream.close()
     arrOutputStream.close()
     val output = arrOutputStream.toByteArray
-    println("output = " + output.size)
     val encoded = Base64.getEncoder.encodeToString(output)
-    println("encoded = " + encoded.size)
+
+    val newBatchContent = NewBatchContent(encoded, batchName, priority, comments, notifications)
 
 
-    val newBatchContent = NewBatchContent(content = "encoded", batch_name = batchName, priority = Some(priority), comments = Some(comments))
     val url: Uri = uri"${BASE_URL}/api/project/v2/${projectId}/import/tasks"
     mysttp.
       body(Json.toJson(newBatchContent))
@@ -136,56 +130,20 @@ class TaskMonkClient (credentials: Credentials) extends SLF4JLogging {
 }
 
 object TaskMonkClient {
-  // Set up Akka// Set up Akka
 
   def main(args: Array[String]): Unit = {
 
-    /*
-    implicit val backend = HttpURLConnectionBackend()
-
-    val BASE_URL = "localhost:9000"
-    val projectId = "1"
-    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/import/tasks/url"
-    val response = sttp.
-      body(Json.toJson(Map("batch_name" -> "John", "fileUrl" -> "/Users/sampath/input.xls")).toString())
-      .contentType("application/json")
-      .header("Authorization", api_key)
-      // use an optional parameter in the URI
-      .post(url)
-      .response(asJson[TaskImportUrlResponse])
-      .send()
-    print(response)
-*/
 
     val api_key = "M2VnQU0yNXdDRVFPS2VkQjo3ak9aWEM5Q3VaSHlGZlc0S0MxMUdvWllneXRLZ1NpaWdvd0RMYkZCbGZockZJUExsd3h1V1ZBb05FRUxqQXR0"
     val client = new TaskMonkClient(credentials = new ApiKeyCredentials(api_key))
     val fileUrl = "input.xls"
     val batchName = "batchName"
     val projectId = "1"
-    val file = new File("/Users/sampath/tmp/input2.xls")
-    /*
-    val bytes = Files.readAllBytes(file.toPath)
-    println("bytes = " + bytes.size)
-    val arrOutputStream = new ByteArrayOutputStream()
-    val zipOutputStream = new GZIPOutputStream(arrOutputStream)
-    zipOutputStream.write(bytes)
-    zipOutputStream.close()
-    arrOutputStream.close()
-    val output = arrOutputStream.toByteArray
-    println("output = " + output.size)
-    val encoded = Base64.getEncoder.encodeToString(output)
-    println("encoded = " + encoded.size)
-
-    val decoded = Base64.getDecoder.decode(encoded)
-    println("decoded = " + decoded.size)
-
-    val zipInputStream = new GZIPInputStream(new ByteArrayInputStream(decoded))
-    val x = IOUtils.readInputStreamToString(zipInputStream, Charset.defaultCharset())
-    println("x = " + x.size)
-
-
-*/
-    client.uploadTasks(projectId, batchName, 5, "XXXXX", file).map { importResponse =>
+    val file = new File("/Users/sampath/input.xls")
+    val notification = Notification("Email", Map("email_address" -> "sampath06@gmail.com"))
+    val newBatchContent = NewBatchContent(content = "encoded",
+      batch_name = batchName, priority = Some(1), comments = Some("comments"), notifications = List(notification))
+    client.uploadTasks(projectId, file, "dummy", notifications = List(notification)).map { importResponse =>
       println(importResponse)
       val jobId = importResponse.jobId
       client.getJobProgress(projectId, jobId).map { jobProgress =>
