@@ -1,168 +1,64 @@
 package io.taskmonk.client
 
-import java.io.{ByteArrayOutputStream, File}
-import java.nio.file.Files
-import java.util.Base64
-import java.util.zip.GZIPOutputStream
+import java.io.File
+import java.util.concurrent.{CompletionStage, Future}
 
-import com.softwaremill.sttp.{Uri, _}
-import com.softwaremill.sttp.akkahttp.AkkaHttpBackend
-import com.softwaremill.sttp.playJson._
-import exceptions.ApiFailedException
-import io.taskmonk.auth.{ApiKeyCredentials, Credentials}
+import io.taskmonk.auth.Credentials
 import io.taskmonk.entities._
-import io.taskmonk.utils.SLF4JLogging
-import play.api.libs.json.{JsError, Json}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.compat.java8.FutureConverters._
+import scala.collection.JavaConverters._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
-class TaskMonkClient (credentials: Credentials) extends SLF4JLogging {
+class TaskMonkClient(credentials: Credentials) {
 
-  implicit val backend = AkkaHttpBackend()
-  val mysttp = credentials.addAuthInfo(sttp)
-  val BASE_URL = "http://localhost:9000"
+  var taskMonkClient =  new TaskMonkClientScala(credentials)
 
-  private def mapResponse[T](response: Response[Either[DeserializationError[JsError], T]] ): Either[String, T] = {
-    log.debug("code = {}; response = {}", response.code, response: Any)
-      response.body match {
-        case Left(e) =>
-          Left(e)
-        case Right(r) =>
-          r match {
-            case Left(e) =>
-              Left(JsError.toJson(e.error).toString())
-            case Right(r) =>
-              Right(r)
-          }
-      }
+  val duration = 60 seconds
+
+  def uploadTasksUrl(projectId: String, taskImportUrl: TaskImportUrlRequest): TaskImportUrlResponse = {
+    Await.result(taskMonkClient.uploadTasksUrl(projectId, taskImportUrl), duration)
   }
 
-  def uploadTasksUrl(projectId: String, taskImportUrl: TaskImportUrlRequest): Future[TaskImportUrlResponse] = {
-    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/import/tasks/url"
-    mysttp.
-      body(Json.toJson(Map("batch_name" -> "John", "fileUrl" -> "/Users/sampath/input.xls")).toString())
-      .contentType("application/json")
-      .post(url)
-      .response(asJson[TaskImportUrlResponse])
-      .send()
-      .map {response =>
-        mapResponse(response) match {
-          case Left(e) =>
-            val ex = new ApiFailedException(e)
-            Future.failed(ex)
-          case Right(r) =>
-            Future {r}
-        }
-      }.flatMap(identity)
+  def uploadTasks(projectId: String, file: File, batchName: String): TaskImportUrlResponse = {
+    Await.result(taskMonkClient.uploadTasks(projectId, file, batchName), duration)
   }
 
-  def uploadTasks(projectId: String, file: File, batchName: String, priority: Option[Int] = Some(1),
-                  comments: Option[String] = None,
-                  notifications: List[Notification] = List.empty[Notification]): Future[TaskImportUrlResponse] = {
-    val bytes = Files.readAllBytes(file.toPath)
-    log.debug("bytes = " + bytes.size)
-    val arrOutputStream = new ByteArrayOutputStream()
-    val zipOutputStream = new GZIPOutputStream(arrOutputStream)
-    zipOutputStream.write(bytes)
-    zipOutputStream.close()
-    arrOutputStream.close()
-    val output = arrOutputStream.toByteArray
-    val encoded = Base64.getEncoder.encodeToString(output)
-
-    val newBatchContent = NewBatchContent(encoded, batchName, priority, comments, notifications)
-
-
-    val url: Uri = uri"${BASE_URL}/api/project/v2/${projectId}/import/tasks"
-    mysttp.
-      body(Json.toJson(newBatchContent))
-      .post(url)
-      .response(asJson[TaskImportUrlResponse])
-      .send()
-      .map {response =>
-        mapResponse(response) match {
-          case Left(e) =>
-            val ex = new ApiFailedException(e)
-            Future.failed(ex)
-          case Right(r) =>
-            Future {r}
-        }
-      }.flatMap(identity)
-  }
-
-
-  def getJobProgress(projectId: String, jobId: String): Future[JobProgressResponse] = {
-    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/job/${jobId}/status"
-    mysttp
-      .get(url)
-      .response(asJson[JobProgressResponse])
-      .send()
-      .map {response =>
-        mapResponse(response) match {
-          case Left(e) =>
-            val ex = new ApiFailedException(e)
-            Future.failed(ex)
-          case Right(r) =>
-            Future {r}
-        }
-      }.flatMap(identity)
-
-  }
-
-  def getBatchStatus(projectId: String, batchId: String): Future[BatchSummaryV2] = {
-    val url: Uri = uri"${BASE_URL}/api/project/v2/${projectId}/batch/${batchId}/status"
-    mysttp
-      .get(url)
-      .response(asJson[BatchSummaryV2])
-      .send()
-      .map {response =>
-        mapResponse(response) match {
-          case Left(e) =>
-            val ex = new ApiFailedException(e)
-            Future.failed(ex)
-          case Right(r) =>
-            Future {r}
-        }
-      }.flatMap(identity)
-
-  }
-
-}
-
-object TaskMonkClient {
-
-  def main(args: Array[String]): Unit = {
-
-
-    val api_key = "M2VnQU0yNXdDRVFPS2VkQjo3ak9aWEM5Q3VaSHlGZlc0S0MxMUdvWllneXRLZ1NpaWdvd0RMYkZCbGZockZJUExsd3h1V1ZBb05FRUxqQXR0"
-    val client = new TaskMonkClient(credentials = new ApiKeyCredentials(api_key))
-    val fileUrl = "input.xls"
-    val batchName = "batchName"
-    val projectId = "1"
-    val file = new File("/Users/sampath/input.xls")
-    val notification = Notification("Email", Map("email_address" -> "sampath06@gmail.com"))
-    val newBatchContent = NewBatchContent(content = "encoded",
-      batch_name = batchName, priority = Some(1), comments = Some("comments"), notifications = List(notification))
-    client.uploadTasks(projectId, file, "dummy", notifications = List(notification)).map { importResponse =>
-      println(importResponse)
-      val jobId = importResponse.jobId
-      client.getJobProgress(projectId, jobId).map { jobProgress =>
-        println("jobProgress = {}", jobProgress)
-      }.recover {
-        case ex: Exception =>
-          ex.printStackTrace()
-      }
-      client.getBatchStatus(projectId, importResponse.batchId).map { batchStatus =>
-        println("batchStatus = {}", batchStatus)
-      }.recover {
-        case ex: Exception =>
-          ex.printStackTrace()
-      }
-    }.recover {
-      case ex: Exception =>
-        ex.printStackTrace()
+  def uploadTasks(projectId: String, file: File, batchName: String, priority: Int,
+                  comments: String,
+                  notifications: java.util.List[Notification]): TaskImportUrlResponse = {
+    val xpriority: Option[Int] = if (priority == null) {
+      None
+    } else {
+      Some(priority)
     }
+
+    val xcomments: Option[String] = if (comments == null) {
+      None
+    } else {
+      Some(comments)
+    }
+
+    val xnotifications: List[Notification] = if (notifications == null) {
+      List.empty[Notification]
+    } else {
+      notifications.asScala.toList
+    }
+
+    Await.result(taskMonkClient.uploadTasks(projectId, file, batchName, xpriority, xcomments, xnotifications), duration)
+  }
+
+  def getJobProgress(projectId: String, jobId: String): JobProgressResponse = {
+    Await.result(taskMonkClient.getJobProgress(projectId, jobId), duration)
+  }
+
+  def getBatchStatus(projectId: String, batchId: String): BatchSummaryV2 = {
+    Await.result(taskMonkClient.getBatchStatus(projectId, batchId), duration)
+
   }
 
 
-}
+
+
+  }
