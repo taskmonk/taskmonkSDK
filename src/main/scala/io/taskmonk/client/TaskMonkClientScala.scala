@@ -57,12 +57,12 @@ class TaskMonkClientScala(credentials: Credentials) extends SLF4JLogging {
       }.flatMap(identity)
   }
 
-  def uploadTasks(projectId: String, file: File, batchName: String) = {
-    uploadTasks(projectId, file, batchName, Some(1), None, List.empty[Notification])
+  def uploadTasks(projectId: String, file: File, batchName: String): Future[TaskImportUrlResponse] = {
+    uploadTasks(projectId, file, batchName, Some(1), None, List.empty[NotificationScala])
   }
   def uploadTasks(projectId: String, file: File, batchName: String, priority: Option[Int],
                   comments: Option[String],
-                  notifications: List[Notification]): Future[TaskImportUrlResponse] = {
+                  notifications: List[NotificationScala]): Future[TaskImportUrlResponse] = {
     val bytes = Files.readAllBytes(file.toPath)
     log.debug("bytes = " + bytes.size)
     val arrOutputStream = new ByteArrayOutputStream()
@@ -143,10 +143,10 @@ object TaskMonkClientScala {
     val batchName = "batchName"
     val projectId = "1"
     val file = new File("/Users/sampath/input.xls")
-    val notification = Notification("Email", Map("email_address" -> "sampath06@gmail.com"))
+    val notification = NotificationScala("Email", Map("email_address" -> "sampath06@gmail.com"))
     val newBatchContent = NewBatchContent(content = "encoded",
       batch_name = batchName, priority = Some(1), comments = Some("comments"), notifications = List(notification))
-    client.uploadTasks(projectId, file, "dummy", notifications = List(notification)).map { importResponse =>
+    client.uploadTasks(projectId, file, "dummy", Some(1), Some("comments"), notifications = List(notification)).map { importResponse =>
       println(importResponse)
       val jobId = importResponse.jobId
       client.getJobProgress(projectId, jobId).map { jobProgress =>

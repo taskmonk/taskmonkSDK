@@ -40,10 +40,12 @@ class TaskMonkClient(credentials: Credentials) {
       Some(comments)
     }
 
-    val xnotifications: List[Notification] = if (notifications == null) {
-      List.empty[Notification]
+    val xnotifications: List[NotificationScala] = if (notifications == null) {
+      List.empty[NotificationScala]
     } else {
-      notifications.asScala.toList
+      notifications.asScala.toList.map(notification =>
+        NotificationScala(notification.notificationType, notification.metaData.asScala.toMap)
+      )
     }
 
     Await.result(taskMonkClient.uploadTasks(projectId, file, batchName, xpriority, xcomments, xnotifications), duration)
