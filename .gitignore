@@ -1,3 +1,15 @@
 target/**
 .idea/**
 project/target/**
+python/bin/
+python/include/
+python/lib/
+python/pyvenv.cfg
+python/src/__pycache__/
+python/utils/__pycache__/
+python/pip-selfcheck.json
+python/**.pyc
+python/*.egg-info
+python/*.egg
+*/*.vscode
+**/*.pyc
