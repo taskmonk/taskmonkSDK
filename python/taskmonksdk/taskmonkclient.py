@@ -1,4 +1,5 @@
 from utils import urlConfig, apiCall, argumentlist, utilities
+from utils.jsonUtils import json2obj
 import base64
 import gzip
 import json
@@ -33,7 +34,7 @@ class TaskMonkSDK:
         url = self.baseURL + urlConfig.URLS['Project'] + '/' + projectId
         response = apiCall.get(self.apiKey, url, {}, 10)
     
-        return response
+        return json2obj(response).response
     
     def getProjectUsers(self, projectId):
         url = self.baseURL + urlConfig.URLS['Project'] + '/' + projectId + '/users'
@@ -50,21 +51,21 @@ class TaskMonkSDK:
     def getJobProgress(self, projectId, jobId):
         url = self.baseURL + urlConfig.URLS['Project'] + '/' +projectId + '/job/' + jobId + '/status'
         response = apiCall.get(self.apiKey, url, {}, 10)
-        return response
+        return json2obj(response).response
     
     def getBatchStatus(self, projectId, batchId):
         url = self.baseURL + urlConfig.URLS['Project'] + '/' + projectId + '/batch/' + batchId + '/status'
         response = apiCall.get(self.apiKey, url, {}, 10)
         return response
     
-    def uploadTasks(self,  projectId=None, file=None, batch_name=None, priority=0, comments='', notifications={},):
+    def uploadTasks(self,  projectId=None, file=None, batch_name=None, priority=0, comments='', notification_email = None):
         url = self.baseURL + urlConfig.URLS['Project'] + '/v2/' + projectId + '/import/tasks'
     
         try:
             if argumentVerifier([projectId, file, batch_name, self.apiKey]):
                 raise InvalidArguments
         except InvalidArguments:
-            print('invalid arguments')
+            print('invalid arguments', projectId, file)
             return json.dumps(argsList['uploadTasks'])
     
         try:
@@ -84,16 +85,25 @@ class TaskMonkSDK:
                 "error": "failed to decode file, file format supported .gzip .xls .xlsx"
             })
     
+        notifications = []
+        if notification_email:
+            notification = {}
+            notification['notificationType'] = "Email"
+            metaData = {'email_address': notification_email}
+            notification['metaData'] = metaData
+            notifications.append(notification)
+
         payload = {
           "batch_name": "batchName",
           "priority": 0,
           "comments": "string",
-          "content": encoded
+          "content": encoded,
+          "notifications":  notifications
         }
     
         response = apiCall.post(self.apiKey, url, json.dumps(payload) , 60)
     
-        return response
+        return json2obj(response).response
     
     
     def importTasksUrl(self, projectId=None, fileUrl=None):

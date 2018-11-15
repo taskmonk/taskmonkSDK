@@ -9,7 +9,7 @@ def get(apiKey, url='', data={}, timeout=10):
     }
 
     try:
-        print(url)
+        # print(url)
         r = requests.get(url, timeout=timeout, headers=headers)
         r.raise_for_status()
         resp = r.json()
@@ -31,7 +31,7 @@ def post(apiKey, url='', data={}, timeout=30):
     }
 
     try:
-        print(url, data)
+        # print(url, data)
         r = requests.post(url,  headers=headers, data=data, timeout=timeout)
         r.raise_for_status()
         resp = r.json()
@@ -54,7 +54,7 @@ def fileUpload(apiKey, url='', files={}, timeout=30):
     }
     
     try:
-        print(url, files)
+        # print(url, files)
         r = requests.post(url, files=files, timeout=timeout, headers=headers)
         r.raise_for_status()
         resp = r.json()

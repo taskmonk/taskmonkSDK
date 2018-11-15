@@ -1,3 +1,10 @@
+# taskmonkclient
+
+Python client library for using taskmonk SDK
+
+TaskMonkSDK is the python libary used for integrating with the TaskMonk tool
+ 
+```python
 from taskmonksdk.taskmonkclient import TaskMonkSDK
 
 api_key = "M2VnQU0yNXdDRVFPS2VkQjo3ak9aWEM5Q3VaSHlGZlc0S0MxMUdvWllneXRLZ1NpaWdvd0RMYkZCbGZockZJUExsd3h1V1ZBb05FRUxqQXR0"
@@ -23,3 +30,20 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+```
+
+## Documentation
+
+SDK documentation is available at [example.com](http://example.com).
+
+
+## Quickstart 
+
+
+```shell
+# Clone the github repository https://github.com/taskmonk/taskmonkSDK
+# cd python
+# sudo pip install .
+}
+```
