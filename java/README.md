@@ -109,5 +109,5 @@ Then add the following dependency
 
 
 ```scala
-    compile 'ai.taskmonk:taskmonksdk_2.12:0.0.3-SNAPSHOT'
+    compile 'ai.taskmonk:taskmonksdk_2.12:0.4-SNAPSHOT'
 ```
