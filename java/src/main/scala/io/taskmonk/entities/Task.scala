@@ -100,13 +100,18 @@ case class Task(id: String,
                 batch_id: String,
                 next_level: Short,
                 status: Short,
-                input: Option[TaskInput],
-                output: Option[TaskOutput],
-                unique_field_value: Option[String],
+                input: Option[TaskInput] = None,
+                output: Option[TaskOutput] = None,
+                unique_field_value: Option[String] = None,
                 active_user: Option[String] = None,
-                error: Option[ErrorLevels],
-                lastModifiedTime: Option[Date]) {
+                error: Option[ErrorLevels] = None,
+                lastModifiedTime: Option[Date] = Some(new Date())) {
 
+  def this(id: String,
+           project_id: String,
+           batch_id: String,
+           next_level: Short,
+           status: Short) = this(id, project_id, batch_id, next_level, status, None, None, None, None, None, None)
   def getInputString(): Option[String] = {
     input.map(Json.toJson(_).toString())
   }

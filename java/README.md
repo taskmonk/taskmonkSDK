@@ -52,6 +52,43 @@ public class TaskMonkClientJava {
 }       
 ```
 
+To stream tasks and result:
+```java
+        /*
+         * Setup the task streamer
+         */
+        Map<String, String> config = new HashMap<String, String>();
+        config.put(Streaming.AUTH_LISTEN_STRING, "Endpoint=sb://taskmonktest3.servicebus.windows.net/;SharedAccessKeyName=Listen;SharedAccessKey=vRtYUtJ6AKli3CHu9WpelIAJjz+2qRotQcj7L6X7dTU=;EntityPath=topic1");
+        config.put(Streaming.TOPIC, "topic1");
+        config.put(Streaming.SUBSCIPTION_ID, "subs2");
+
+        TaskStreamer streamer = new TaskStreamer(config);
+
+        /*
+         * Send a task on the stream
+         */
+        Short level = 0;
+        Short status = 1;
+        Task task = new Task(UUID.randomUUID().toString(),
+                "",
+                "",
+                level,
+                status);
+        streamer.sendSync(task);
+
+        /*
+         * Consume results on the stream
+         */
+        streamer.addListener(new TaskListener() {
+                                 @Override
+                                 public void onTaskReceived(Task task) {
+                                     System.out.println("Recevied task {}" + task);
+                                 }
+                             });
+ ```
+
+Contact TaskMonk for the topic and subscription id to use for the project.
+
 ## Documentation
 
 SDK documentation is available at [example.com](http://example.com).

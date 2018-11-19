@@ -27,12 +27,7 @@ Thread.sleep(2000)
       project_id = "",
       batch_id = "",
       status = 0,
-      next_level = 1,
-      input = None,
-      output = None,
-      unique_field_value = None,
-      error = None,
-      lastModifiedTime = None
+      next_level = 1
     )
     taskStreamer.send(task).map { x =>
       print(x)
