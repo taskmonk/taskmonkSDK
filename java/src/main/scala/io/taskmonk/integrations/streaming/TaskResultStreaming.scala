@@ -30,7 +30,7 @@ trait TaskListener {
   *               topic - The topic used for streaming
   *               subsId - The subscription id used for streaming
   */
-class TaskStreamer(config: Map[String, String])  extends SLF4JLogging {
+class TaskStreamerScala(config: Map[String, String])  extends SLF4JLogging {
   def this(config: java.util.Map[String, String]) = this(config.asScala.toMap)
 
   val messageStreamWriter: MessageStreamWriter = new MessageStreamWriter(config)

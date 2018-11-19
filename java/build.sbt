@@ -5,7 +5,7 @@ lazy val root = (project in file(".")).
     inThisBuild(List(
       organization := "ai.taskmonk",
       scalaVersion := "2.12.6",
-      version      := "0.1"
+      version      := "0.2"
     )),
     name := "TaskMonkSDK",
     libraryDependencies += scalaTest % Test
