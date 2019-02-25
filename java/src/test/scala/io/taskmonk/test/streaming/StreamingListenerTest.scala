@@ -4,54 +4,37 @@ package io.taskmonk.test.streaming
 import java.util.UUID
 
 import io.taskmonk.entities.Task
-import io.taskmonk.integrations.streaming.{Streaming, TaskListener, TaskStreamer, TaskStreamerScala}
+import io.taskmonk.integrations.streaming._
 import org.scalatest._
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class StreamingSpec extends FlatSpec with Matchers {
+  "Streaming Send" should "send task" in {
+
+    val taskStreamer = new TaskStreamerSender("testqueue_fromclient", "hcZHXMnS8Do/JRuauEcUA1hj3d+EGLIOEeIwiby9uNw=")
+    val task = new Task(externalId = UUID.randomUUID().toString,
+      project_id = "68",
+      batch_id = "230",
+      input = Map("Data 1" -> "value1"),
+      output = Map.empty[String, String]
+    )
+
+    taskStreamer.send(task).map { x =>
+      print(x)
+    }
+    Thread.sleep(1000);
+  }
   "Streaming Receive" should "receive task" in {
-    val config = Map("authListenString" -> "Endpoint=sb://taskmonktest3.servicebus.windows.net/;SharedAccessKeyName=Listen;SharedAccessKey=vRtYUtJ6AKli3CHu9WpelIAJjz+2qRotQcj7L6X7dTU=;EntityPath=topic1",
-      "topic" -> "topic1",
-      Streaming.SUBSCIPTION_ID -> "subs2")
-    val taskStreamer = new TaskStreamer(config.asJava)
+    val taskStreamer = new TaskStreamerListener("testqueue_toclient", "sAu5hGbOH300Nr45jb8leGImVv+RFVmGeiV0CNqvMpE=")
     taskStreamer.addListener(new TaskListener {
       val log = LoggerFactory.getLogger(this.getClass)
       override def onTaskReceived(task: Task): Unit =
         log.debug("Recevied task {}", task)
     })
-Thread.sleep(2000)
-        val task = new Task(id = UUID.randomUUID().toString,
-      project_id = "",
-      batch_id = "",
-      status = 0,
-      next_level = 1
-    )
-    taskStreamer.send(task).map { x =>
-      print(x)
-    }
-
+    Thread.sleep(100000);
   }
-  "Streaming Send" should "send task" in {
-    val config = Map(Streaming.AUTH_WRITE_STRING -> "Endpoint=sb://taskmonktest3.servicebus.windows.net/;SharedAccessKeyName=Send;SharedAccessKey=SBLT2hzRISyltA/ghvoaQVI3mVfdj2jh59JJp+Z2a+c=;EntityPath=topic1",
-      Streaming.TOPIC -> "topic1")
-    val taskStreamer = new TaskStreamerScala(config)
-        val task = new Task(id = UUID.randomUUID().toString,
-          project_id = "",
-          batch_id = "",
-          status = 0,
-          next_level = 1,
-          input = None,
-          output = None,
-          unique_field_value = None,
-          error = None,
-          lastModifiedTime = None
-        )
-        taskStreamer.send(task).map { x =>
-          print(x)
-        }
 
-  }
 }

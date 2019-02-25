@@ -11,9 +11,9 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class TaskMonkClient(credentials: Credentials) {
+class TaskMonkClient(server: String, credentials: Credentials) {
 
-  var taskMonkClient =  new TaskMonkClientScala(credentials)
+  var taskMonkClient =  new TaskMonkClientScala(server, credentials)
 
   val duration = 60 seconds
 

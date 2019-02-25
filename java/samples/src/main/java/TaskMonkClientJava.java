@@ -13,7 +13,7 @@ public class TaskMonkClientJava {
     public static void main(String[] args) {
         String apiKey = "API_KEY";
         Credentials credentials = new ApiKeyCredentials(apiKey);
-        TaskMonkClient client = new TaskMonkClient(credentials);
+        TaskMonkClient client = new TaskMonkClient("demo.taskmonk.io", credentials);
         String projectId = "1";
         String batchName = "batchName";
         String fileUrl = "http://blob.example.azure.com/filepath";

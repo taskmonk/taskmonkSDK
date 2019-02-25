@@ -43,23 +43,7 @@
     <appender-ref ref="STDOUT" />
   </appender>
 
-  <logger name="play" level="INFO" />
-  <logger name="controllers" level="DEBUG" />
-  <logger name="entities" level="DEBUG" />
-  <logger name="application" level="DEBUG" />
-  <logger name="auth" level="DEBUG" />
-  <logger name="actors" level="DEBUG" />
-  <logger name="akka" level="DEBUG" />
-  <logger name="akka.event" level="WARN" />
-  <logger name="akka.io" level="WARN" />
-  <logger name="accesslog" level="DEBUG" />
-  <logger name="datamodel" level="DEBUG" />
-  <logger name="utils.excel.HcompImporter" level="DEBUG" />
-  <logger name="slick" level="INFO" />
-  <logger name="com.zaxxer" level="DEBUG" />
-  <logger name="oracles" level="DEBUG" />
-  <logger name="actors.ProjectActor" level="DEBUG" />
-  <logger name="utils.excel" level="DEBUG" />
+  <logger name="io.taskmonk" level="DEBUG" />
 
 
 

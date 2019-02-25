@@ -17,11 +17,11 @@ import play.api.libs.json.{JsError, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TaskMonkClientScala(credentials: Credentials) extends SLF4JLogging {
+class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4JLogging {
 
   implicit private val backend = AkkaHttpBackend()
   private val mysttp = credentials.addAuthInfo(sttp)
-  private val BASE_URL = "http://localhost:9000"
+  private val BASE_URL = "http://${server}"
 
   private def mapResponse[T](response: Response[Either[DeserializationError[JsError], T]] ): Either[String, T] = {
     log.debug("code = {}; response = {}", response.code, response: Any)
@@ -138,7 +138,7 @@ object TaskMonkClientScala {
 
 
     val api_key = "M2VnQU0yNXdDRVFPS2VkQjo3ak9aWEM5Q3VaSHlGZlc0S0MxMUdvWllneXRLZ1NpaWdvd0RMYkZCbGZockZJUExsd3h1V1ZBb05FRUxqQXR0"
-    val client = new TaskMonkClientScala(credentials = new ApiKeyCredentials(api_key))
+    val client = new TaskMonkClientScala("localhost:9000", credentials = new ApiKeyCredentials(api_key))
     val fileUrl = "input.xls"
     val batchName = "batchName"
     val projectId = "1"

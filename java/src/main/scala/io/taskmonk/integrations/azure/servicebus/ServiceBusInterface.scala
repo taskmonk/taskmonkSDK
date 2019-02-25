@@ -1,92 +1,99 @@
 package io.taskmonk.integrations.azure.servicebus
 
-import java.time.Duration
-import java.util.concurrent.CompletableFuture
-
-import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder
-import com.microsoft.azure.servicebus._
-
-import scala.compat.java8.FutureConverters._
-import play.api.libs.json.Json
 import java.nio.charset.StandardCharsets
 
-import io.taskmonk.integrations.streaming.Streaming
+import com.microsoft.azure.servicebus._
+import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder
+import java.time.Duration
+import java.util
+import java.util.concurrent.CompletableFuture
+
+import scala.compat.java8.FutureConverters._
+import scala.concurrent.ExecutionContext.Implicits._
 import io.taskmonk.utils.SLF4JLogging
-import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits._
-
-
 
 trait MessageHandler {
   def handle(message: String)
 }
-class AzureMessageHandler(subscriptionClient: SubscriptionClient, messageHandler: MessageHandler) extends IMessageHandler with SLF4JLogging {
+class ServiceBusSendInterface(queueName: String, accessKey: String) extends SLF4JLogging {
+
+  val accessKeyName = "Client"
+
+  val connectionString = s"Endpoint=sb://taskmonk.servicebus.windows.net/;SharedAccessKeyName=${accessKeyName};SharedAccessKey=${accessKey};EntityPath=${queueName}"
+
+  def send(messageId: String, label: String, content: String): Future[_] = {
+    val sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, queueName), ReceiveMode.PEEKLOCK)
+    val message = new Message(content)
+    message.setContentType("application/json")
+    message.setLabel(label)
+    message.setMessageId(messageId)
+    message.setTimeToLive(Duration.ofDays(14))
+    log.debug("\nMessage sending: Id = {}", message.getMessageId)
+    sendClient.sendAsync(message).toScala.map { x =>
+      log.debug("\n\tMessage acknowledged: Id = {}", message.getMessageId)
+      sendClient.close()
+      x
+    }
+
+
+  }
+}
+
+class AzureQueueMessageHandler(messageHandler: MessageHandler) extends IMessageHandler with SLF4JLogging {
+
   override def notifyException(exception: Throwable, phase: ExceptionPhase): Unit = ???
 
   override def onMessageAsync(message: IMessage): CompletableFuture[Void] =  {
-    log.debug("{} Message received: {}", subscriptionClient.getEntityPath, message.getMessageId: Any)
+    log.debug("Message received: {}", message.getMessageId: Any)
     val body = message.getBody
     messageHandler.handle(new String(body, StandardCharsets.UTF_8))
-    return subscriptionClient.completeAsync(message.getLockToken)
+    return CompletableFuture.completedFuture(null)
   }
 
 }
-
-class ServiceBusSendInterface(configuration: Map[String, String]) extends SLF4JLogging {
-  val primConnString = configuration.get(Streaming.AUTH_WRITE_STRING)
-  val topicName = configuration.get(Streaming.TOPIC)
-
-  var topicClient: Option[TopicClient] = if (primConnString.isDefined && topicName.isDefined) {
-      Some(new TopicClient(new ConnectionStringBuilder(primConnString.get, topicName.get)))
-  } else {
-    None
-  }
-
-  def send(messageId: String, content: String, label: String): Future[_] = {
-    topicClient match {
-      case None =>
-        val ex = new InternalError("Topic Client not initialised")
-        Future.failed(ex)
-      case Some(client) =>
-        val message = new Message(content)
-        message.setContentType("application/json")
-        message.setLabel(label)
-        message.setMessageId(messageId)
-        message.setTimeToLive(Duration.ofDays(14))
-        log.debug("\nMessage sending: Id = {}", message.getMessageId)
-        client.sendAsync(message).toScala.map { x =>
-          log.debug("\n\tMessage acknowledged: Id = {}", message.getMessageId)
-          x
-        }
-    }
-  }
-}
-
-class ServiceBusListener(configuration: Map[String, String]) extends SLF4JLogging {
-
-  val listenConnString = configuration.getOrElse(Streaming.AUTH_LISTEN_STRING, "")
-  var subscription1Client : Option[SubscriptionClient] = None
-  if (listenConnString.isEmpty) {
-    log.error("Failed to get listen connection string")
-  } else {
-
-    val topicName = configuration.getOrElse(Streaming.TOPIC, "")
-    val subscriptionId = configuration.getOrElse(Streaming.SUBSCIPTION_ID, "")
-
-    val subscriptionName = topicName + "/Subscriptions/" + subscriptionId
-    subscription1Client = Some(new SubscriptionClient(new ConnectionStringBuilder(listenConnString, subscriptionName), ReceiveMode.PEEKLOCK))
-
-  }
+class ServiceBusListener(queueName: String, accessKey: String) extends SLF4JLogging {
   def addMessageHandler(messageHandler: MessageHandler): Boolean = {
-    subscription1Client.map { x =>
-      val azureMessageHandler = new AzureMessageHandler(x, messageHandler)
-      x.registerMessageHandler(azureMessageHandler)
-      return true
-    }
-    return true;
 
+    import com.microsoft.azure.servicebus.QueueClient
+    import com.microsoft.azure.servicebus.ReceiveMode
+    import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder
+
+    val accessKeyName = "Client"
+    val connectionString = s"Endpoint=sb://taskmonk.servicebus.windows.net/;SharedAccessKeyName=${accessKeyName};SharedAccessKey=${accessKey};EntityPath=${queueName}"
+    val receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, queueName), ReceiveMode.PEEKLOCK)
+    val azureMessageHandler = new AzureQueueMessageHandler(messageHandler)
+    receiveClient.registerMessageHandler(azureMessageHandler, new MessageHandlerOptions(1, true, Duration.ofMinutes(1)));
+    true
   }
+
+
+}
+object ServiceBusQueueInterface extends SLF4JLogging {
+
+
+  def main(args: Array[String]): Unit = {
+    // Close the sender once the send operation is complete.
+    val accessKeyName = "Company"
+
+    val sharedAccessKey = "KHaZcCi4f45F+D12f/P30M495cYIy8Ai1UrlNaOASUk="
+    val queueName = "testqueue"
+
+    val sendInterface = new ServiceBusSendInterface(queueName, sharedAccessKey)
+    val id = "2"
+    val data = "[" + s"{'name' = '${id}', 'firstName' = 'Albert'}" + "]"
+    sendInterface.send(id, "Label", data)
+
+
+    val recvKey = "rJmfYPft3k0rTc51rWQPB9aB7PmwUQ6r3yrqEk50U6g="
+    val recvInteface = new ServiceBusListener(queueName, recvKey)
+    recvInteface.addMessageHandler(new MessageHandler {
+      override def handle(message: String): Unit = {
+        log.debug("Recevied emssage {}", message)
+      }
+    })
+  }
+
 
 }
