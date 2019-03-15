@@ -18,9 +18,9 @@ import java.util.Map;
 
 public class TaskMonkClientJava {
     public static void main(String[] args) {
-        String apiKey = "API_KEY";
-        Credentials credentials = new ApiKeyCredentials(apiKey);
-        TaskMonkClient client = new TaskMonkClient(credentials);
+        Credentials credentials = new OAuthClientCredentials("clientId", "clientSecret");
+        String server = "http://demo.taskmonk.io";
+        TaskMonkClient client = new TaskMonkClient(server, credentials);
         String projectId = "1";
         String batchName = "batchName";
         String fileUrl = "http://blob.example.azure.com/filepath";
@@ -48,6 +48,7 @@ public class TaskMonkClientJava {
         response = client.uploadTasks(projectId, file, batchName, priority, comments, notifications);
         System.out.println("Uploaded tasks; jobId = " + response.jobId());
 
+
     }
 }       
 ```
@@ -57,29 +58,30 @@ To stream tasks and result:
         /*
          * Setup the task streamer
          */
-        Map<String, String> config = new HashMap<String, String>();
-        config.put(Streaming.AUTH_LISTEN_STRING, "Endpoint=sb://taskmonktest3.servicebus.windows.net/;SharedAccessKeyName=Listen;SharedAccessKey=vRtYUtJ6AKli3CHu9WpelIAJjz+2qRotQcj7L6X7dTU=;EntityPath=topic1");
-        config.put(Streaming.TOPIC, "topic1");
-        config.put(Streaming.SUBSCIPTION_ID, "subs2");
 
-        TaskStreamer streamer = new TaskStreamer(config);
+        String queueName = "testqueue_fomclient";
+        String accessKey = "hcZHXMnS8Do/JRuauEcUA1hj3d+EGLIOEeIwiby9uNw=";
+        TaskStreamerSender sender = new TaskStreamerSender(queueName, accessKey);
 
         /*
          * Send a task on the stream
          */
-        Short level = 0;
-        Short status = 1;
+        Map<String, String> input = new HashMap<String, String>();
+        input.put("input1", "value1");
+        Map<String, String> output = new HashMap<String, String>();
         Task task = new Task(UUID.randomUUID().toString(),
-                "",
-                "",
-                level,
-                status);
-        streamer.sendSync(task);
+                projectId,
+                "batchId",
+        input);
+        sender.send(task);
 
         /*
          * Consume results on the stream
          */
-        streamer.addListener(new TaskListener() {
+        String recvQueue = "testqueue_fromclient";
+        String recvAccessKey = "sAu5hGbOH300Nr45jb8leGImVv+RFVmGeiV0CNqvMpE=";
+        TaskStreamerListener listener = new TaskStreamerListener(recvQueue, recvAccessKey);
+        listener.addListener(new TaskListener() {
                                  @Override
                                  public void onTaskReceived(Task task) {
                                      System.out.println("Recevied task {}" + task);
@@ -87,7 +89,7 @@ To stream tasks and result:
                              });
  ```
 
-Contact TaskMonk for the topic and subscription id to use for the project.
+Contact TaskMonk for the queue and access keys to use for the project.
 
 ## Documentation
 
@@ -109,5 +111,5 @@ Then add the following dependency
 
 
 ```scala
-    compile 'ai.taskmonk:taskmonksdk_2.12:0.4-SNAPSHOT'
+    compile 'ai.taskmonk:taskmonksdk_2.12:0.8-SNAPSHOT'
 ```
