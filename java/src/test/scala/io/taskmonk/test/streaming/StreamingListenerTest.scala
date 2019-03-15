@@ -1,6 +1,7 @@
 package io.taskmonk.test.streaming
 
 
+import java.util
 import java.util.UUID
 
 import io.taskmonk.entities.Task
@@ -15,12 +16,12 @@ class StreamingSpec extends FlatSpec with Matchers {
   "Streaming Send" should "send task" in {
 
     val taskStreamer = new TaskStreamerSender("testqueue_fromclient", "hcZHXMnS8Do/JRuauEcUA1hj3d+EGLIOEeIwiby9uNw=")
+    val input: java.util.Map[String, String] = new util.HashMap[String, String]
+    input.put("input1", "value1")
     val task = new Task(externalId = UUID.randomUUID().toString,
       project_id = "68",
       batch_id = "230",
-      input = Map("Data 1" -> "value1"),
-      output = Map.empty[String, String]
-    )
+      input = input)
 
     taskStreamer.send(task).map { x =>
       print(x)

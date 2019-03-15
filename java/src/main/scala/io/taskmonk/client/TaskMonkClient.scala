@@ -60,7 +60,4 @@ class TaskMonkClient(server: String, credentials: Credentials) {
 
   }
 
-
-
-
-  }
+}
