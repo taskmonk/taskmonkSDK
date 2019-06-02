@@ -1,8 +1,10 @@
 package io.taskmonk.client
 
+import io.taskmonk.entities._
 import java.io.{ByteArrayOutputStream, File}
 import java.nio.file.Files
-import java.util.Base64
+import java.util
+import java.util.{Base64}
 import java.util.zip.GZIPOutputStream
 
 import com.nimbusds.oauth2.sdk.AccessTokenResponse
@@ -12,7 +14,6 @@ import com.softwaremill.sttp.playJson._
 import exceptions.ApiFailedException
 import io.taskmonk.auth._
 import io.taskmonk.client.TaskMonkClientScala.MyRequest
-import io.taskmonk.entities._
 import io.taskmonk.utils.SLF4JLogging
 import play.api.libs.json.{JsError, Json}
 
@@ -33,25 +34,25 @@ object TaskMonkClientScala extends SLF4JLogging {
     val notification = NotificationScala("Email", Map("email_address" -> "sampath06@gmail.com"))
     val newBatchContent = NewBatchContent(content = "encoded",
       batch_name = batchName, priority = Some(1), comments = Some("comments"), notifications = List(notification))
-    client.uploadTasks(projectId, file, "dummy", Some(1), Some("comments"), notifications = List(notification)).map { importResponse =>
-      println(importResponse)
-      val jobId = importResponse.jobId
-      client.getJobProgress(projectId, jobId).map { jobProgress =>
-        println("jobProgress = {}", jobProgress)
-      }.recover {
-        case ex: Exception =>
-          ex.printStackTrace()
-      }
-      client.getBatchStatus(projectId, importResponse.batchId).map { batchStatus =>
-        println("batchStatus = {}", batchStatus)
-      }.recover {
-        case ex: Exception =>
-          ex.printStackTrace()
-      }
-    }.recover {
-      case ex: Exception =>
-        ex.printStackTrace()
-    }
+//    client.uploadTasks(projectId, file, "dummy", Some(1), Some("comments"), notifications = List(notification)).map { importResponse =>
+//      println(importResponse)
+//      val jobId = importResponse.jobId
+//      client.getJobProgress(projectId, jobId).map { jobProgress =>
+//        println("jobProgress = {}", jobProgress)
+//      }.recover {
+//        case ex: Exception =>
+//          ex.printStackTrace()
+//      }
+//      client.getBatchStatus(projectId, importResponse.batchId).map { batchStatus =>
+//        println("batchStatus = {}", batchStatus)
+//      }.recover {
+//        case ex: Exception =>
+//          ex.printStackTrace()
+//      }
+//    }.recover {
+//      case ex: Exception =>
+//        ex.printStackTrace()
+//    }
   }
 
 
@@ -114,14 +115,13 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
       }
   }
 
-  def uploadTasksUrl(projectId: String, taskImportUrl: TaskImportUrlRequest): Future[TaskImportUrlResponse] = {
-    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/import/tasks/url"
+  def uploadTasksUrl(projectId: String, batchId: String, tasksUrl: String): Future[TaskImportUrlResponseScala] = {
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/batch/${batchId}/tasks/import/url"
     getSttp.map { mysttp =>
       mysttp.
-        body(Json.toJson(Map("batch_name" -> "John", "fileUrl" -> "/Users/sampath/input.xls")).toString())
-        .contentType("application/json")
+        body(Map("file_url" -> tasksUrl))
         .post(url)
-        .response(asJson[TaskImportUrlResponse])
+        .response(asJson[TaskImportUrlResponseScala])
         .send()
         .map { response =>
           mapResponse(response) match {
@@ -137,12 +137,7 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
     }.flatMap(identity)
   }
 
-  def uploadTasks(projectId: String, file: File, batchName: String): Future[TaskImportUrlResponse] = {
-    uploadTasks(projectId, file, batchName, Some(1), None, List.empty[NotificationScala])
-  }
-  def uploadTasks(projectId: String, file: File, batchName: String, priority: Option[Int],
-                  comments: Option[String],
-                  notifications: List[NotificationScala]): Future[TaskImportUrlResponse] = {
+  def uploadTasks(projectId: String, batchId: String, file: File): Future[TaskImportUrlResponseScala] = {
     val bytes = Files.readAllBytes(file.toPath)
     log.debug("bytes = " + bytes.size)
     val arrOutputStream = new ByteArrayOutputStream()
@@ -153,15 +148,13 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
     val output = arrOutputStream.toByteArray
     val encoded = Base64.getEncoder.encodeToString(output)
 
-    val newBatchContent = NewBatchContent(encoded, batchName, priority, comments, notifications)
-
-
-    val url: Uri = uri"${BASE_URL}/api/project/v2/${projectId}/import/tasks"
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/batch/${batchId}/tasks/import"
     getSttp.map { mysttp =>
       mysttp.
-        body(Json.toJson(newBatchContent))
+        body(encoded)
+        .contentType("text/plain", "gzip")
         .post(url)
-        .response(asJson[TaskImportUrlResponse])
+        .response(asJson[TaskImportUrlResponseScala])
         .send()
         .map { response =>
           mapResponse(response) match {
@@ -175,17 +168,18 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
           }
         }.flatMap(identity)
     }.flatMap(identity)
+
   }
 
 
-  def getJobProgress(projectId: String, jobId: String): Future[JobProgressResponse] = {
+  def getJobProgress(projectId: String, jobId: String): Future[JobProgressResponseScala] = {
     log.debug("Getting job progress for job {}", jobId)
     val url: Uri = uri"${BASE_URL}/api/project/${projectId}/job/${jobId}/status"
     getSttp.map { mysttp =>
 
       mysttp
         .get(url)
-        .response(asJson[JobProgressResponse])
+        .response(asJson[JobProgressResponseScala])
         .send()
         .map { response =>
           mapResponse(response) match {
@@ -223,6 +217,111 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
         }.flatMap(identity)
     }.flatMap(identity)
   }
+
+  def getBatchOutput(orgId: String, projectId: String, batchId: String): Future[BatchOutput] = {
+    val url: Uri = uri"${BASE_URL}/api/organization/${orgId}/project/${projectId}/batch/${batchId}/output"
+    log.debug("url = {}", url)
+    val outputFields = Seq.empty[String]
+    getSttp.map { mysttp =>
+      mysttp
+        .body(Json.toJson(Map("fieldNames" -> outputFields)))
+        .post(url)
+        .contentType("application/json")
+        .response(asJson[BatchOutput])
+        .send()
+        .map { response =>
+          mapResponse(response) match {
+            case Left(e) =>
+              val ex = new ApiFailedException(e)
+              Future.failed(ex)
+            case Right(r) =>
+              Future {
+                r
+              }
+          }
+        }.flatMap(identity)
+    }.flatMap(identity)
+  }
+
+  def createBatch(projectId: String, batchName: String, priority: Short, comments: Option[String], notifications: List[NotificationScala]): Future[String] = {
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/batch"
+    log.debug("Sending post to {}", url)
+    getSttp.map { mysttp =>
+      val newBatchData = NewBatchData(batchName, Some(priority), comments, notifications)
+      mysttp
+          .body(Json.toJson(newBatchData))
+          .post(url)
+        .response(asString)
+          .send()
+          .map { response =>
+            log.info("create batch response = {}", response)
+            response.body match {
+              case Left(e) =>
+                val ex = new ApiFailedException(e)
+                Future.failed(ex)
+              case Right(r) =>
+                Future {
+                  val json = Json.parse(r)
+                  val result = (json \ "id").validate[String].get
+                  result
+                }
+            }
+           }.flatMap(identity)
+    }.flatMap(identity)
+  }
+
+  def updateBatch(projectId: String, batchId: String, batchName: String, priority: Short, comments: Option[String], notifications: List[NotificationScala]): Future[String] = {
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/batch/${batchId}"
+    log.debug("Sending post to {}", url)
+    getSttp.map { mysttp =>
+      val newBatchData = NewBatchData(batchName, Some(priority), comments, notifications)
+      mysttp
+        .body(Json.toJson(newBatchData))
+        .put(url)
+        .response(asString)
+        .send()
+        .map { response =>
+          log.info("create batch response = {}", response)
+          response.body match {
+            case Left(e) =>
+              val ex = new ApiFailedException(e)
+              Future.failed(ex)
+            case Right(r) =>
+              Future {
+                val json = Json.parse(r)
+                val result = (json \ "id").validate[String].get
+                result
+              }
+          }
+        }.flatMap(identity)
+    }.flatMap(identity)
+  }
+
+
+  def addTask(taskScala: TaskScala): Future[String] = {
+    val url: Uri = uri"${BASE_URL}/api/project/${taskScala.project_id}/task/external"
+    log.debug("Sending post to {}", url)
+    getSttp.map { mysttp =>
+      mysttp
+        .body(Json.toJson(taskScala))
+        .post(url)
+        .response(asString)
+        .send()
+        .map { response =>
+          log.info("create task response = {}", response)
+          response.body match {
+            case Left(e) =>
+              val ex = new ApiFailedException(e)
+              Future.failed(ex)
+            case Right(r) =>
+              Future {
+                r
+              }
+          }
+        }.flatMap(identity)
+    }.flatMap(identity)
+  }
+
 
 }
 

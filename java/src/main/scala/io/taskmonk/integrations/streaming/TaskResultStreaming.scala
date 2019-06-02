@@ -1,6 +1,6 @@
 package io.taskmonk.integrations.streaming
 
-import io.taskmonk.entities.Task
+import io.taskmonk.entities.TaskScala
 import io.taskmonk.integrations.azure.servicebus.{MessageHandler, ServiceBusListener, ServiceBusSendInterface}
 import io.taskmonk.utils.SLF4JLogging
 import play.api.libs.json.{JsError, JsSuccess, Json}
@@ -17,7 +17,7 @@ class MessageStreamListener(queueName: String, accessKey: String) extends Servic
 }
 
 trait TaskListener {
-  def onTaskReceived(task: Task)
+  def onTaskReceived(task: TaskScala)
 }
 
 class TaskStreamerListener(queueName: String, accessKey: String)  extends SLF4JLogging {
@@ -25,11 +25,11 @@ class TaskStreamerListener(queueName: String, accessKey: String)  extends SLF4JL
   def addListener(taskListener: TaskListener): Boolean = {
     messageStreamListener.addMessageHandler(new MessageHandler {
       override def handle(message: String): Unit = {
-        val task = Json.parse(message).validate[Task]
+        val task = Json.parse(message).validate[TaskScala]
         task match {
           case e: JsError =>
             log.error(JsError.toJson(e).toString())
-          case s: JsSuccess[Task] =>
+          case s: JsSuccess[TaskScala] =>
             log.debug("Sending task {} to listener", s.get.externalId)
             taskListener.onTaskReceived(s.get)
         }
@@ -40,7 +40,7 @@ class TaskStreamerListener(queueName: String, accessKey: String)  extends SLF4JL
 
 class TaskStreamerSender(queueName: String, accessKey: String)  extends SLF4JLogging {
   val messageStreamWriter: MessageStreamWriter = new MessageStreamWriter(queueName, accessKey)
-  def send(task: Task): Future[_] = {
+  def send(task: TaskScala): Future[_] = {
     messageStreamWriter.send(task.externalId, task.project_id + ":" + task.batch_id, Json.toJson(task).toString)
   }
 }

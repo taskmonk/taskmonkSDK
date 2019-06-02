@@ -8,8 +8,8 @@ object TaskImportUrlRequest {
   implicit val writes = Json.writes[TaskImportUrlRequest]
 }
 
-case class TaskImportUrlResponse(batchId: String, jobId: String)
-object TaskImportUrlResponse {
-  implicit val reads = Json.reads[TaskImportUrlResponse]
-  implicit val writes = Json.writes[TaskImportUrlResponse]
+case class TaskImportUrlResponseScala(batchId: String, jobId: String)
+object TaskImportUrlResponseScala {
+  implicit val reads = Json.reads[TaskImportUrlResponseScala]
+  implicit val writes = Json.writes[TaskImportUrlResponseScala]
 }

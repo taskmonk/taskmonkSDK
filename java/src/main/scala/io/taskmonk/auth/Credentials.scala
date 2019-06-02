@@ -4,7 +4,7 @@ import com.google.inject.ImplementedBy
 import com.softwaremill.sttp.playJson.asJson
 import com.softwaremill.sttp.{Empty, RequestT, SttpApi, Uri}
 import exceptions.ApiFailedException
-import io.taskmonk.entities.TaskImportUrlResponse
+import io.taskmonk.entities.TaskImportUrlResponseScala
 import play.api.libs.json.Json
 
 import scala.concurrent.Future

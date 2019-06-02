@@ -2,8 +2,8 @@ package io.taskmonk.entities
 
 import play.api.libs.json.Json
 
-case class JobProgressResponse(completed: Int, total: Int, percentage: Int)
-object  JobProgressResponse {
-  implicit val reads = Json.reads[JobProgressResponse]
-  implicit val writes = Json.writes[JobProgressResponse]
+case class JobProgressResponseScala(completed: Int, total: Int, percentage: Int)
+object  JobProgressResponseScala {
+  implicit val reads = Json.reads[JobProgressResponseScala]
+  implicit val writes = Json.writes[JobProgressResponseScala]
 }

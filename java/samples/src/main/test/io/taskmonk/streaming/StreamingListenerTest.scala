@@ -3,7 +3,7 @@ package io.taskmonk.test.streaming
 
 import java.util.UUID
 
-import io.taskmonk.entities.Task
+import io.taskmonk.entities.TaskScala
 import io.taskmonk.integrations.streaming.{Streaming, TaskListener, TaskStreamerScala}
 import org.scalatest._
 import org.slf4j.LoggerFactory
@@ -18,7 +18,7 @@ class StreamingSpec extends FlatSpec with Matchers {
     val taskStreamer = new TaskStreamerScala(config)
     taskStreamer.addListener(new TaskListener {
       val log = LoggerFactory.getLogger(this.getClass)
-      override def onTaskReceived(task: Task): Unit =
+      override def onTaskReceived(task: TaskScala): Unit =
         log.debug("Recevied task {}", task)
     })
 Thread.sleep(2000)
@@ -42,7 +42,7 @@ Thread.sleep(2000)
     val config = Map(Streaming.AUTH_WRITE_STRING -> "Endpoint=sb://taskmonktest3.servicebus.windows.net/;SharedAccessKeyName=Send;SharedAccessKey=SBLT2hzRISyltA/ghvoaQVI3mVfdj2jh59JJp+Z2a+c=;EntityPath=topic1",
       Streaming.TOPIC -> "topic1")
     val taskStreamer = new TaskStreamerScala(config)
-        val task = new Task(id = UUID.randomUUID().toString,
+        val task = new TaskScala(id = UUID.randomUUID().toString,
           project_id = "",
           batch_id = "",
           status = 0,

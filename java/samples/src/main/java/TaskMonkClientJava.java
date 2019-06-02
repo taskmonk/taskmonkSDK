@@ -1,6 +1,6 @@
 import io.taskmonk.auth.ApiKeyCredentials;
 import io.taskmonk.auth.Credentials;
-import io.taskmonk.client.TaskMonkClient;
+import io.taskmonk.client.TaskMonkClientSync;
 import io.taskmonk.entities.*;
 
 import java.io.File;
