@@ -131,10 +131,13 @@ public class TaskMonkClient extends TaskMonkClientSync {
   }
 
 
-  public void getBatchOutput(String orgId, String projectId, String batchId, String outputPath) {
-    super.getBatchOutputSync(orgId, projectId, batchId, outputPath);
-  }
-
+  /**
+   * Get the status for a batch. Use this api to determine the progress on a batch
+   * and if the output file is available
+   * @param projectId
+   * @param batchId
+   * @return
+   */
   public BatchSummary getBatchStatus(String projectId, String batchId) {
     return new BatchSummary(super.getBatchStatusSync(projectId, batchId));
   }

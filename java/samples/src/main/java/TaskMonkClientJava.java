@@ -1,9 +1,6 @@
 import io.taskmonk.auth.OAuthClientCredentials;
 import io.taskmonk.client.TaskMonkClient;
-import io.taskmonk.entities.JobProgressResponse;
-import io.taskmonk.entities.Notification;
-import io.taskmonk.entities.Task;
-import io.taskmonk.entities.TaskImportResponse;
+import io.taskmonk.entities.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -49,9 +46,13 @@ public class TaskMonkClientJava {
         String taskId = client.addTask(task);
         System.out.println("Created task " + taskId);
 
-        // Get the batch output
-        String orgId = "3";
-        client.getBatchOutput(orgId, projectId, batchId, "/tmp/tmp.xlsx");
-        System.out.println("Got batch output to /tmp/tmp.xlsx");
+        BatchSummary batchStatus = client.getBatchStatus(projectId, batchId);
+        System.out.println("Competed = " + batchStatus.completed);
+        String outputPath = "/tmp/" + batchId + "_output.xlsx";
+        if (batchStatus.isBatchComplete()) {
+            client.getBatchOutput(projectId, batchStatus, outputPath);
+        }
+        System.out.println("Batch output saved in " + outputPath);
+
     }
 }
