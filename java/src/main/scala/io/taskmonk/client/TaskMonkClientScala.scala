@@ -138,8 +138,14 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
   }
 
   def uploadTasks(projectId: String, batchId: String, file: File): Future[TaskImportUrlResponseScala] = {
+    log.debug("Uploading tasks to batch {}", batchId)
+    val reg_ex = """.*\.(\w+)""".r
+    val fileType = file.getAbsolutePath match {
+      case reg_ex(ext) => ext
+      case _ => ".xlsx"
+    }
+    log.debug("fileType = {}", fileType)
     val bytes = Files.readAllBytes(file.toPath)
-    log.debug("bytes = " + bytes.size)
     val arrOutputStream = new ByteArrayOutputStream()
     val zipOutputStream = new GZIPOutputStream(arrOutputStream)
     zipOutputStream.write(bytes)
@@ -148,7 +154,8 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
     val output = arrOutputStream.toByteArray
     val encoded = Base64.getEncoder.encodeToString(output)
 
-    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/batch/${batchId}/tasks/import"
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/batch/${batchId}/tasks/import?fileType=${fileType}"
+    log.debug("Upload url = {}", url)
     getSttp.map { mysttp =>
       mysttp.
         body(encoded)
@@ -196,13 +203,14 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
 
   }
 
-  def getBatchStatus(projectId: String, batchId: String): Future[BatchSummaryV2] = {
+  def getBatchStatus(projectId: String, batchId: String): Future[BatchSummaryScala] = {
     val url: Uri = uri"${BASE_URL}/api/project/v2/${projectId}/batch/${batchId}/status"
+    log.debug("status url = {}", url)
     getSttp.map { mysttp =>
 
       mysttp
         .get(url)
-        .response(asJson[BatchSummaryV2])
+        .response(asJson[BatchSummaryScala])
         .send()
         .map { response =>
           mapResponse(response) match {

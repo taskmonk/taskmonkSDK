@@ -2,6 +2,8 @@ package io.taskmonk.client;
 
 import io.taskmonk.auth.Credentials;
 import io.taskmonk.entities.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -13,6 +15,8 @@ import java.util.List;
 public class TaskMonkClient extends TaskMonkClientSync {
 
   private TaskMonkClientScala taskMonkClient;
+
+  private static final Logger log = LoggerFactory.getLogger(TaskMonkClient.class);
 
   /**
    * @param server - The server for accessing taskmonk. Typical values are
@@ -62,7 +66,7 @@ public class TaskMonkClient extends TaskMonkClientSync {
    * @param taskUrl - A publicly accessible url for the excel or csv file with the tasks to be imported
    * @return {@link io.taskmonk.entities.TaskImportResponse}
    */
-  public TaskImportResponse uploadTasksUrl(String projectId, String batchId, String taskUrl) {
+  public TaskImportResponse uploadTasksUrlToBatch(String projectId, String batchId, String taskUrl) {
       TaskImportUrlResponseScala result = super.uploadTasksUrlSync(projectId, batchId, taskUrl);
       return new TaskImportResponse(result.batchId(), result.jobId());
   }
@@ -74,10 +78,35 @@ public class TaskMonkClient extends TaskMonkClientSync {
    * @param file - excel file that has the tasks
    * @return {@link io.taskmonk.entities.TaskImportResponse}
    */
+  public TaskImportResponse uploadTasksToBatch(String projectId, String batchId, File file) {
+    TaskImportUrlResponseScala result = super.uploadTasksSyncToBatch(projectId, batchId, file);
+    return new TaskImportResponse(result.batchId(), result.jobId());
+  }
+
+  /**
+   * Upload tasks using a publicly accessible url. The batch is created and the batch id returned to user
+   * @param projectId - Id for the project
+   * @param batchName - The batch to upload the tasks to
+   * @param taskUrl - A publicly accessible url for the excel or csv file with the tasks to be imported
+   * @return {@link io.taskmonk.entities.TaskImportResponse}
+   */
+  public TaskImportResponse uploadTasksUrl(String projectId, String batchName, String taskUrl) {
+    TaskImportUrlResponseScala result = super.uploadTasksUrlSync(projectId, batchName, taskUrl);
+    return new TaskImportResponse(result.batchId(), result.jobId());
+  }
+
+  /**
+   * Upload task using a local file. The batch is created and the batch id returned to the user
+   * @param projectId - project to which to upload the tasks
+   * @param batchId - The batch to upload the tasks to
+   * @param file - excel file that has the tasks
+   * @return {@link io.taskmonk.entities.TaskImportResponse}
+   */
   public TaskImportResponse uploadTasks(String projectId, String batchId, File file) {
     TaskImportUrlResponseScala result = super.uploadTasksSync(projectId, batchId, file);
     return new TaskImportResponse(result.batchId(), result.jobId());
   }
+
 
 
   /**
@@ -104,5 +133,20 @@ public class TaskMonkClient extends TaskMonkClientSync {
 
   public void getBatchOutput(String orgId, String projectId, String batchId, String outputPath) {
     super.getBatchOutputSync(orgId, projectId, batchId, outputPath);
+  }
+
+  public BatchSummary getBatchStatus(String projectId, String batchId) {
+    return new BatchSummary(super.getBatchStatusSync(projectId, batchId));
+  }
+  /**
+   * Get the batch output in a local file path
+   * @param projectId - project id
+   * @param batchStatus - batch status received from a batch status api call {@link BatchSummary}
+   * @param outputPath - the path where the output file should be saved
+   */
+  public void getBatchOutput(String projectId, BatchSummary batchStatus, String outputPath) {
+    waitForJobCompletion(projectId, batchStatus.jobId);
+    fileDownloader(batchStatus.fileUrl, outputPath);
+    log.debug("Saved output to {}", outputPath);
   }
 }

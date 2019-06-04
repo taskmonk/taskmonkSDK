@@ -27,16 +27,36 @@ class TaskMonkClientSync(server: String, credentials: Credentials) extends SLF4J
   val duration = 60 seconds
 
 
-  private def fileDownloader(url: String, filename: String) = {
+  protected def fileDownloader(url: String, filename: String) = {
     new URL(url) #> new File(filename) !!
   }
 
-  def uploadTasksUrlSync(projectId: String, batchId: String, fileUrl: String): TaskImportUrlResponseScala = {
+  def uploadTasksUrlSyncToBatch(projectId: String, batchId: String, fileUrl: String): TaskImportUrlResponseScala = {
     Await.result(taskMonkClient.uploadTasksUrl(projectId, batchId, fileUrl), duration)
   }
 
-  def uploadTasksSync(projectId: String, batchId: String, file: File): TaskImportUrlResponseScala = {
+  def uploadTasksSyncToBatch(projectId: String, batchId: String, file: File): TaskImportUrlResponseScala = {
     Await.result(taskMonkClient.uploadTasks(projectId, batchId, file), duration)
+  }
+
+  def uploadTasksUrlSync(projectId: String, batchName: String, fileUrl: String): TaskImportUrlResponseScala = {
+    val result = for {
+      batchId <- taskMonkClient.createBatch(projectId, batchName, priority= 1, comments = None, notifications = List.empty[NotificationScala])
+      importResponse <- taskMonkClient.uploadTasksUrl(projectId, batchId, fileUrl)
+    } yield {
+      importResponse
+    }
+    Await.result(result, duration)
+  }
+
+  def uploadTasksSync(projectId: String, batchName: String, file: File): TaskImportUrlResponseScala = {
+    val result = for {
+      batchId <- taskMonkClient.createBatch(projectId, batchName, priority= 1, comments = None, notifications = List.empty[NotificationScala])
+      importResponse <- taskMonkClient.uploadTasks(projectId, batchId, file)
+    } yield {
+      importResponse
+    }
+    Await.result(result, duration)
   }
 
 
@@ -44,8 +64,8 @@ class TaskMonkClientSync(server: String, credentials: Credentials) extends SLF4J
     Await.result(taskMonkClient.getJobProgress(projectId, jobId), duration)
   }
 
-  def getBatchStatus(projectId: String, batchId: String): BatchSummaryV2 = {
-    Await.result(taskMonkClient.getBatchStatus(projectId, batchId), duration)
+  def getBatchStatusSync(projectId: String, batchId: String): BatchSummaryScala = {
+   Await.result(taskMonkClient.getBatchStatus(projectId, batchId), duration)
   }
 
   def createBatchSync(projectId: String, batchName: String, priority: Short, comments: String, notifications: util.List[Notification]): String  = {

@@ -7,11 +7,15 @@ object BatchOutput {
   implicit val reads = Json.reads[BatchOutput]
   implicit val writes = Json.writes[BatchOutput]
 }
-case class BatchSummaryV2(newCount: String, inProgress: String, completed: String, total: Int, jobId: Option[String], fileUrl: Option[String])
 
-object BatchSummaryV2 {
+case class BatchSummaryScala(new_count: Int, in_progress: Int, completed: Int, total: Int, job_id: Option[String], file_url: Option[String]) {
+  def isBatchComplete(): Boolean = {
+    return (completed == total)
+  }
+}
+object BatchSummaryScala {
 
-  implicit val writes = Json.writes[BatchSummaryV2]
-  implicit val reads = Json.reads[BatchSummaryV2]
+  implicit val writes = Json.writes[BatchSummaryScala]
+  implicit val reads = Json.reads[BatchSummaryScala]
 }
 
