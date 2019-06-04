@@ -1,11 +1,8 @@
 import io.taskmonk.auth.OAuthClientCredentials;
 import io.taskmonk.client.TaskMonkClient;
-import io.taskmonk.entities.*;
+import io.taskmonk.entities.BatchSummary;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Test {
     public static void main(String[] args) throws InterruptedException {
