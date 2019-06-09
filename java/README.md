@@ -18,39 +18,22 @@ import java.util.Map;
 
 public class TaskMonkClientJava {
     public static void main(String[] args) {
-        Credentials credentials = new OAuthClientCredentials("clientId", "clientSecret");
-        String server = "http://demo.taskmonk.io";
-        TaskMonkClient client = new TaskMonkClient(server, credentials);
+                TaskMonkClient client = new TaskMonkClient("demo.taskmonk.io",
+                new OAuthClientCredentials("client_id", "client_secret"));
+
         String projectId = "1";
-        String batchName = "batchName";
-        String fileUrl = "http://blob.example.azure.com/filepath";
+        String batchId = client.uploadTasks(projectId, "batchName", new File("/tmp/tmp.csv")).batchId;
+        System.out.println("task batch id = " + batchId);
 
-        // Upload from url
-        TaskImportUrlRequest request = new TaskImportUrlRequest(fileUrl, batchName);
-        TaskImportUrlResponse response = client.uploadTasksUrl(projectId, request);
+        BatchSummary batchStatus = client.getBatchStatus(projectId, batchId);
+        System.out.println("Competed = " + batchStatus.completed);
 
-        JobProgressResponse jobProgressResponse = client.getJobProgress(projectId, response.jobId());
-
-
-        // Upload from file
-        File file = new File("localpath");
-
-        // Set priority; Higher the number higher the priority
-        Integer priority = 1;
-        String comments = "Special Directions to BPO";
-        Map<String, String> metaData = new HashMap<String, String>();
-        metaData.put("email_address", "info@taskmonk.ai");
-        Notification notification = new Notification("email", metaData);
-
-        List<Notification> notifications = new ArrayList<Notification>();
-        notifications.add(notification);
-
-        response = client.uploadTasks(projectId, file, batchName, priority, comments, notifications);
-        System.out.println("Uploaded tasks; jobId = " + response.jobId());
-
-
-    }
-}       
+        String outputPath = "/tmp/" + batchId + "_output.xlsx";
+        if (batchStatus.isBatchComplete()) {
+            client.getBatchOutput(projectId, batchStatus, outputPath);
+        }
+        System.out.println("Batch output saved in " + outputPath);
+ 
 ```
 
 To stream tasks and result:
@@ -93,7 +76,7 @@ Contact TaskMonk for the queue and access keys to use for the project.
 
 ## Documentation
 
-SDK documentation is available at [example.com](http://example.com).
+SDK documentation is available at [example.com](http://docs.tasmonk.io).
 
 
 ## Quickstart with gradle
