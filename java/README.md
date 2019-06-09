@@ -76,7 +76,7 @@ Contact TaskMonk for the queue and access keys to use for the project.
 
 ## Documentation
 
-SDK documentation is available at [example.com](http://docs.tasmonk.io).
+SDK documentation is available at [docs.taskmonk.io](http://docs.tasmonk.io).
 
 
 ## Quickstart with gradle
