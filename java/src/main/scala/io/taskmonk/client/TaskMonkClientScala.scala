@@ -203,6 +203,32 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
 
   }
 
+  def getJobProgressBatch(projectId: String, batchId: String): Future[JobProgressResponseScala] = {
+    log.debug("Getting job progress for batch {}", batchId)
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/job/${batchId}/status?input_type=batch"
+    log.debug("progress url = {}", url)
+    getSttp.map { mysttp =>
+
+      mysttp
+        .get(url)
+        .response(asJson[JobProgressResponseScala])
+        .send()
+        .map { response =>
+          mapResponse(response) match {
+            case Left(e) =>
+              val ex = new ApiFailedException(e)
+              Future.failed(ex)
+            case Right(r) =>
+              Future {
+                log.debug("r = {}", r)
+                r
+              }
+          }
+        }.flatMap(identity)
+    }.flatMap(identity)
+
+  }
+
   def getBatchStatus(projectId: String, batchId: String): Future[BatchSummaryScala] = {
     val url: Uri = uri"${BASE_URL}/api/project/v2/${projectId}/batch/${batchId}/status"
     log.debug("status url = {}", url)
@@ -226,9 +252,9 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
     }.flatMap(identity)
   }
 
-  def getBatchOutput(orgId: String, projectId: String, batchId: String): Future[BatchOutput] = {
-    val url: Uri = uri"${BASE_URL}/api/organization/${orgId}/project/${projectId}/batch/${batchId}/output"
-    log.debug("url = {}", url)
+  def getBatchOutput(projectId: String, batchId: String, outputFormat: String): Future[BatchOutput] = {
+    val url: Uri = uri"${BASE_URL}/api/project/${projectId}/batch/${batchId}/output?output_format=${outputFormat}"
+    log.debug("get batch output url = {}", url)
     val outputFields = Seq.empty[String]
     getSttp.map { mysttp =>
       mysttp

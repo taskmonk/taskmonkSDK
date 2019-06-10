@@ -16,6 +16,7 @@ public class TaskMonkClient extends TaskMonkClientSync {
 
   private TaskMonkClientScala taskMonkClient;
 
+  private String projectId;
   private static final Logger log = LoggerFactory.getLogger(TaskMonkClient.class);
 
   /**
@@ -26,28 +27,34 @@ public class TaskMonkClient extends TaskMonkClientSync {
    * @param credentials - Credentials is the base class for using OAuth2 to access the taskmonk apis. </br>
    * <p>The default implementation is provided by OAuthClientCredentials</p>
    */
-  public TaskMonkClient(String server, Credentials credentials) {
+  public TaskMonkClient(String projectId, String server, Credentials credentials) {
     super(server, credentials);
+    this.projectId = projectId;
     taskMonkClient = new TaskMonkClientScala(server, credentials);
-
   }
+
+//  public void setProjectId(String projectId) {
+//    this.projectId = projectId;
+//  }
+//
+//  public String getProjectId() {
+//    return projectId;
+//  }
 
   /**
    * Create a new batch in the project
-   * @param projectId - project in which to create the batch
    * @param batchName - name of the new batch to be created
    * @param priority - priority for the batch. Higher the number, higher the priority
    * @param comments - Any instructions that are to be displayed to the analysts
    * @param notifications - Notifications sent when batches are completed
    * @return id of the created batch
    */
-  public String createBatch(String projectId, String batchName, Short priority, String comments, List<Notification> notifications) {
+  public String createBatch(String batchName, Short priority, String comments, List<Notification> notifications) {
     return super.createBatchSync(projectId, batchName, priority, comments, notifications);
   }
 
   /**
    * Update an existing batch
-   * @param projectId - project that the batch belongs to
    * @param batchId - batchId to update
    * @param batchName - name of the new batch to be created
    * @param priority - priority for the batch. Higher the number, higher the priority
@@ -55,67 +62,61 @@ public class TaskMonkClient extends TaskMonkClientSync {
    * @param notifications - Notifications sent when batches are completed
    * @return id of the created batch
    */
-  public String updateBatch(String projectId, String batchId, String batchName, Short priority, String comments, List<Notification> notifications) {
+  public String updateBatch(String batchId, String batchName, Short priority, String comments, List<Notification> notifications) {
     return super.updateBatchSync(projectId, batchId, batchName, priority, comments, notifications);
   }
 
   /**
    * Upload tasks using a publicly accessible url
-   * @param projectId - Id for the project
    * @param batchId - The batch to upload the tasks to
    * @param taskUrl - A publicly accessible url for the excel or csv file with the tasks to be imported
    * @return {@link io.taskmonk.entities.TaskImportResponse}
    */
-  public TaskImportResponse uploadTasksUrlToBatch(String projectId, String batchId, String taskUrl) {
+  public TaskImportResponse uploadTasksUrlToBatch(String batchId, String taskUrl) {
       TaskImportUrlResponseScala result = super.uploadTasksUrlSync(projectId, batchId, taskUrl);
       return new TaskImportResponse(result.batchId(), result.jobId());
   }
 
   /**
    * Upload task using a local file
-   * @param projectId - project to which to upload the tasks
    * @param batchId - The batch to upload the tasks to
    * @param file - excel file that has the tasks
    * @return {@link io.taskmonk.entities.TaskImportResponse}
    */
-  public TaskImportResponse uploadTasksToBatch(String projectId, String batchId, File file) {
+  public TaskImportResponse uploadTasksToBatch(String batchId, File file) {
     TaskImportUrlResponseScala result = super.uploadTasksSyncToBatch(projectId, batchId, file);
     return new TaskImportResponse(result.batchId(), result.jobId());
   }
 
   /**
    * Upload tasks using a publicly accessible url. The batch is created and the batch id returned to user
-   * @param projectId - Id for the project
    * @param batchName - The batch to upload the tasks to
    * @param taskUrl - A publicly accessible url for the excel or csv file with the tasks to be imported
    * @return {@link io.taskmonk.entities.TaskImportResponse}
    */
-  public TaskImportResponse uploadTasksUrl(String projectId, String batchName, String taskUrl) {
+  public TaskImportResponse uploadTasksUrl(String batchName, String taskUrl) {
     TaskImportUrlResponseScala result = super.uploadTasksUrlSync(projectId, batchName, taskUrl);
     return new TaskImportResponse(result.batchId(), result.jobId());
   }
 
   /**
    * Upload task using a local file. The batch is created and the batch id returned to the user
-   * @param projectId - project to which to upload the tasks
    * @param batchId - The batch to upload the tasks to
    * @param file - excel file that has the tasks
    * @return {@link io.taskmonk.entities.TaskImportResponse}
    */
-  public TaskImportResponse uploadTasks(String projectId, String batchId, File file) {
+  public TaskImportResponse uploadTasks(String batchId, File file) {
     TaskImportUrlResponseScala result = super.uploadTasksSync(projectId, batchId, file);
     return new TaskImportResponse(result.batchId(), result.jobId());
   }
 
 
-
   /**
    * Get progress for an import job
-   * @param projectId
    * @param jobId
    * @return
    */
-  public JobProgressResponse getJobProgress(String projectId, String jobId) {
+  public JobProgressResponse getJobProgress(String jobId) {
     JobProgressResponseScala result = super.getJobProgressSync(projectId, jobId);
     return new JobProgressResponse(result.completed(), result.total(), result.percentage());
   }
@@ -134,22 +135,68 @@ public class TaskMonkClient extends TaskMonkClientSync {
   /**
    * Get the status for a batch. Use this api to determine the progress on a batch
    * and if the output file is available
-   * @param projectId
    * @param batchId
    * @return
    */
-  public BatchSummary getBatchStatus(String projectId, String batchId) {
+  public BatchSummary getBatchStatus(String batchId) {
     return new BatchSummary(super.getBatchStatusSync(projectId, batchId));
   }
   /**
    * Get the batch output in a local file path
-   * @param projectId - project id
    * @param batchStatus - batch status received from a batch status api call {@link BatchSummary}
    * @param outputPath - the path where the output file should be saved
    */
-  public void getBatchOutput(String projectId, BatchSummary batchStatus, String outputPath) {
+  public void getBatchOutput(BatchSummary batchStatus, String outputPath) {
     waitForJobCompletion(projectId, batchStatus.jobId);
     fileDownloader(batchStatus.fileUrl, outputPath);
     log.debug("Saved output to {}", outputPath);
+  }
+
+
+  /**
+   * Check if upload is completed for the batch
+   * @param batchId
+   * @return True if all tasks were uploaded to the database; false otherwise
+   */
+  public boolean isUploadComplete(String batchId) {
+    return super.isUploadCompleteSync(projectId, batchId);
+  }
+
+  /**
+   * Check if processing of a batch is complete
+   * @param batchId
+   * @return true if all tasks have been processed by the analysts; false otherwise
+   */
+  public boolean isProcessComplete(String batchId) {
+    return super.isProcessCompleteSync(projectId, batchId);
+  }
+
+
+  /**
+   * Get the batch output in a local file path
+   * @param batchId
+   * @param outputFormat output format for the file - "CSV" or "Excel"
+   * @param outputPath - path where the output file should be created
+   */
+  public void getBatchOutput(String batchId, String outputFormat, String outputPath) {
+    super.getBatchOutputSync(projectId, batchId, outputFormat, outputPath);
+    log.debug("Saved output to {}", outputPath);
+  }
+
+  public String getBatchOutput(String batchId, String outputFormat) {
+      String outputPath = batchId + "_ouptut.csv";
+      getBatchOutput(batchId, outputFormat, outputPath);
+      return outputPath;
+  }
+
+  /**
+   * Get the batch output in csv format in a local file path
+   * The local file path would be batchId + "_output.csv"
+   * @param batchId - batchId
+   */
+  public String getBatchOutput(String batchId) {
+    String outputPath = batchId + "_output.csv";
+    getBatchOutput(batchId, "CSV", outputPath);
+    return outputPath;
   }
 }

@@ -118,8 +118,8 @@ class TaskMonkClientSync(server: String, credentials: Credentials) extends SLF4J
   }
 
 
-  def getBatchOutputSync(orgId: String, projectId: String, batchId: String, outputPath: String): Boolean = {
-    val result = taskMonkClient.getBatchOutput(orgId, projectId, batchId).map { batchOutput =>
+  def getBatchOutputSync(projectId: String, batchId: String, outputFormat: String, outputPath: String): Boolean = {
+    val result = taskMonkClient.getBatchOutput(projectId, batchId, outputFormat).map { batchOutput =>
       waitForJobCompletion(projectId, batchOutput.jobId)
       log.debug("batch job completed")
       fileDownloader(batchOutput.fileUrl, outputPath)
@@ -136,5 +136,19 @@ class TaskMonkClientSync(server: String, credentials: Credentials) extends SLF4J
       jobProgressResponseScala = getJobProgressSync(projectId, jobId)
     }
     true
+  }
+
+  def isUploadCompleteSync(projectId: String, batchId: String): Boolean = {
+    val result = taskMonkClient.getJobProgressBatch(projectId, batchId).map { response =>
+      response.completed == response.total
+    }
+    Await.result(result, duration)
+  }
+
+  def isProcessCompleteSync(projectId: String, batchId: String): Boolean = {
+    val result = taskMonkClient.getBatchStatus(projectId, batchId).map { response =>
+      response.completed == response.total
+    }
+    Await.result(result, duration)
   }
 }
