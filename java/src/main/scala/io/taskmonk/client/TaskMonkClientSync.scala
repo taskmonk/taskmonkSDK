@@ -24,8 +24,7 @@ class TaskMonkClientSync(server: String, credentials: Credentials) extends SLF4J
 
   var taskMonkClient =  new TaskMonkClientScala(server, credentials)
 
-  val duration = 60 seconds
-
+  val duration = 600 seconds
 
   protected def fileDownloader(url: String, filename: String) = {
     new URL(url) #> new File(filename) !!
@@ -147,6 +146,7 @@ class TaskMonkClientSync(server: String, credentials: Credentials) extends SLF4J
 
   def isProcessCompleteSync(projectId: String, batchId: String): Boolean = {
     val result = taskMonkClient.getBatchStatus(projectId, batchId).map { response =>
+      log.debug("batch status = {}", response)
       response.completed == response.total
     }
     Await.result(result, duration)
