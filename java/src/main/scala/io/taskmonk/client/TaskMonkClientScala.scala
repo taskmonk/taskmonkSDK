@@ -62,7 +62,11 @@ class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4
   implicit private val backend = AkkaHttpBackend()
   private var refreshSttp = credentials.addAuthInfo(sttp)
   private var mysttp = credentials.addAuthInfo(sttp)
-  private val BASE_URL = s"http://${server}"
+  private val BASE_URL = if (server.startsWith("http")) {
+    server
+  } else {
+    s"http://${server}"
+  }
   private var accessTokenResponse : Option[TokenResponse] = None
 
   private def getSttp : Future[MyRequest] = {
