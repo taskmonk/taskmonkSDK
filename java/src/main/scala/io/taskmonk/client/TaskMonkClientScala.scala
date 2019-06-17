@@ -4,13 +4,15 @@ import io.taskmonk.entities._
 import java.io.{ByteArrayOutputStream, File}
 import java.nio.file.Files
 import java.util
-import java.util.{Base64}
+import java.util.Base64
 import java.util.zip.GZIPOutputStream
 
+import akka.actor.ActorSystem
 import com.nimbusds.oauth2.sdk.AccessTokenResponse
 import com.softwaremill.sttp.{Uri, _}
 import com.softwaremill.sttp.akkahttp.AkkaHttpBackend
 import com.softwaremill.sttp.playJson._
+import com.typesafe.config.{ConfigBeanFactory, ConfigFactory}
 import exceptions.ApiFailedException
 import io.taskmonk.auth._
 import io.taskmonk.client.TaskMonkClientScala.MyRequest
@@ -59,7 +61,10 @@ object TaskMonkClientScala extends SLF4JLogging {
 }
 class TaskMonkClientScala(server: String, credentials: Credentials) extends SLF4JLogging {
 
-  implicit private val backend = AkkaHttpBackend()
+  val classLoader = classOf[TaskMonkClient].getClassLoader
+  val config = ConfigFactory.load(classLoader)
+  val actorSystem = ActorSystem.create("sttp", config, classLoader)
+  implicit private val backend = AkkaHttpBackend.usingActorSystem(actorSystem)
   private var refreshSttp = credentials.addAuthInfo(sttp)
   private var mysttp = credentials.addAuthInfo(sttp)
   private val BASE_URL = if (server.startsWith("http")) {
